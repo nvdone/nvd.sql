@@ -265,10 +265,59 @@ namespace NVD.SQL
 		private object hideNull(Type type, object value)
 		{
 			if ((value != null) && (!(value is DBNull)))
+			{
+				if (type == typeof(bool) || type == typeof(bool?))
+					return (bool)(Convert.ToInt64(value) == 1);
+
+				if (type == typeof(byte) || type == typeof(byte?))
+					return Convert.ToByte(value);
+
+				if (type == typeof(sbyte) || type == typeof(sbyte?))
+					return Convert.ToSByte(value);
+
+				if (type == typeof(short) || type == typeof(short?))
+					return Convert.ToInt16(value);
+
+				if (type == typeof(int) || type == typeof(int?))
+					return Convert.ToInt32(value);
+
+				if (type == typeof(long) || type == typeof(long?))
+					return Convert.ToInt64(value);
+
+				if (type == typeof(float) || type == typeof(float?))
+					return Convert.ToSingle(value);
+
+				if (type == typeof(double) || type == typeof(double?))
+					return Convert.ToDouble(value);
+
+				if (type == typeof(decimal) || type == typeof(decimal?))
+					return Convert.ToDecimal(value);
+
+				if (type == typeof(Guid) || type == typeof(Guid?))
+				{
+					if (value is string str)
+						return Guid.Parse(str);
+					else
+						return (Guid)value;
+				}
+
+				if (type == typeof(DateTime) && value is DateTimeOffset offset)
+					return offset.DateTime;
+
+				if (type == typeof(DateTimeOffset) && value is DateTime time)
+					return new DateTimeOffset(time);
+
 				return value;
+			}
+
+			if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+				return null;
 
 			if (type.IsArray)
 				return null;
+
+			if (type == typeof(bool))
+				return false;
 
 			if (type == typeof(byte))
 				return (byte)0;
@@ -285,26 +334,28 @@ namespace NVD.SQL
 			if (type == typeof(long))
 				return (long)0;
 
-			else if (type == typeof(string))
-				return "";
-
-			else if (type == typeof(double))
-				return (double)0.0;
-
-			else if (type == typeof(decimal))
-				return (decimal)0.0m;
-
-			else if (type == typeof(float))
+			if (type == typeof(float))
 				return (float)0.0;
 
-			else if (type == typeof(DateTime))
-				return DateTime.MinValue;
+			if (type == typeof(double))
+				return (double)0.0;
 
-			else if (type == typeof(Guid))
+			if (type == typeof(decimal))
+				return (decimal)0.0m;
+
+			if (type == typeof(Guid))
 				return Guid.Empty;
 
-			else
-				throw new NotImplementedException("Null cannot be hidden for " + type.ToString());
+			if (type == typeof(DateTime))
+				return DateTime.MinValue;
+
+			if (type == typeof(DateTimeOffset))
+				return DateTimeOffset.MinValue;
+
+			if (type == typeof(string))
+				return String.Empty;
+
+			throw new NotImplementedException("Unexpected data type in convert " + type.ToString());
 		}
 
 		/// <summary>Makes parameter placeholders for IN statement.</summary>
